@@ -1,33 +1,60 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
+####################################################################################
+# This is the user-interface definition for the Market Data Shiny web application.#
+####################################################################################
 
 library(shiny)
 
 # Define UI for application that draws a histogram
-fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
+shinyUI(fluidPage(
     # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
+  tabsetPanel(
+    tabPanel("About",
+             h2("About This App"),
+             p("The purpose of this app is to explore market data. It will provide the ability to create contingency tables, numerical summaries and plots regarding the data."),
+             p("Data Source: Marketstack API. To access the site please visit: ",
+               a("Marketstack", href = "https://marketstack.com/", target = "_blank"), "."),
+             p("Tabs:"),
+             tags$ul(
+               tags$li("About: Information about the app."),
+               tags$li("Data Download: Download market data from Marketstack."),
+               tags$li("Data Exploration: Summaries and graphs market data.")
+             ),
+             tags$img(src = "https://images.g2crowd.com/uploads/product/image/social_landscape/social_landscape_8532463e95e5d1a9a7f09665c11807d5/marketstack-api.png", height = "100px")
+    ),    
+    tabPanel("Data Download",
+             fluidRow(
+               column(4,
+                      wellPanel(
+                        textInput("symbol", "Symbol", value = "AAPL"),
+                        selectInput("type", "Type", choices = c("eod", "splits", "intraday")),
+                        dateInput("date_from", "Date From", value = Sys.Date() - 10),
+                        dateInput("date_to", "Date To", value = Sys.Date()),
+                        actionButton("get_data", "Get Data")
+                      )
+               ),
+               column(8,
+                      dataTableOutput("data_table"),
+                      downloadButton("download_data", "Download Data")
+               )
+             )
+    ),
+    tabPanel("Data Exploration",
+             fluidRow(
+               column(4,
+                      wellPanel(
+                        selectInput("x_var", "X Variable", 
+                                    choices = c("open", "close", "high", "low")),
+                        selectInput("y_var", "Y Variable", 
+                                    choices = c("open", "close", "high", "low")),
+                        actionButton("summarize_data", "Summarize Data")#,
+                        #tableOutput("contingency_table"),
+                        #tableOutput("numerical_summaries")
+                      )
+                      )
+               )#,
+               #column(8,
+                      #plotOutput("plot")
+               )
+             )
     )
 )
