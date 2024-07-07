@@ -71,3 +71,28 @@ ggplot(df, aes(x = open, fill = open_group)) +
   labs(title = "Density Plot of Opening Prices by Open Group", x = "Opening Price", y = "Density", fill = "Open Group")
 
 
+
+
+##############################################################################
+# Plot 1 : x_var price over time
+p1 <- ggplot(df, aes(x = as.Date(date), y = input$x_var, group = 1)) +
+  geom_line(color = "red") +
+  labs(title = paste0(input$x_var, "Prices Over Time"), x = "Date", y = paste0(input$x_var, "Price"))
+
+# Plot 2 : y_var prices over time
+p2 <- ggplot(df, aes(x = as.Date(date), y = input$y_var, group = 1)) +
+  geom_line(color = "red") +
+  labs(title = paste0(input$y_var, "Prices Over Time"), x = "Date", y = paste0(input$x_var, "Price"))
+
+# Plot 3: Scatter plot of x_var vs y_var prices
+p3 <- ggplot(df, aes(x = input$x_var, y = input$y_var)) +
+  geom_point(color = "blue") +
+  labs(title = paste0(input$x_var, "vs", input$y_var, "Prices"), x = paste0(input$x_var, "Price"),
+       y = paste0(input$y_var, "Price"))
+
+# Plot 4: Density plot of x_var prices over group_var
+p4 <- ggplot(df, aes(x = input$x_var, fill = group_var)) +
+  geom_density(alpha = 0.5) +
+  labs(title = paste0("Density Plot of", input$x_var, "Prices by", input$y_var, "Group"),
+       x = paste0(input$x_var, "Price"), y = "Density", fill = "Open Group")
+grid.arrange(p1, p2, p3, p4, ncol = 2)

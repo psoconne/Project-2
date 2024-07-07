@@ -26,8 +26,8 @@ shinyUI(fluidPage(
                column(4,
                       wellPanel(
                         textInput("symbol", "Symbol", value = "AAPL"),
-                        selectInput("type", "Type", choices = c("eod", "splits", "intraday")),
-                        dateInput("date_from", "Date From", value = Sys.Date() - 10),
+                        selectInput("type", "Type", choices = c("eod", "intraday")),
+                        dateInput("date_from", "Date From", value = Sys.Date() - 30),
                         dateInput("date_to", "Date To", value = Sys.Date()),
                         actionButton("get_data", "Get Data")
                       )
@@ -46,15 +46,18 @@ shinyUI(fluidPage(
                                     choices = c("open", "close", "high", "low")),
                         selectInput("y_var", "Y Variable", 
                                     choices = c("open", "close", "high", "low")),
-                        actionButton("summarize_data", "Summarize Data")#,
-                        #tableOutput("contingency_table"),
-                        #tableOutput("numerical_summaries")
+                        selectInput("plot_type", "Plot Type", 
+                                    choices = c("Line", "Scatter", "Box", "Density")),
+                        checkboxInput("facet", "Facet by Date", value = FALSE),
+                        actionButton("plot_data", "Plot Data")
+                        )
                       )
-                      )
-               )#,
-               #column(8,
-                      #plotOutput("plot")
+               ),
+               column(8,
+                      tableOutput("summary_table"),
+                      #tableOutput("contingency_table"),
+                      plotOutput("market_plot")
                )
              )
     )
-)
+))

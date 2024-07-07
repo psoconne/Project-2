@@ -6,19 +6,13 @@ library(shiny)
 library(httr)
 library(jsonlite)
 library(tidyverse)
-library(gridExtra)
+library(DT)
 
 # Create function for reading in API data
 MarketAPI <- function(symbol, type, date_from=NULL, date_to=NULL) {
   #Create URL based on user provided choices
   if (type == "eod") {
     url <- paste0("http://api.marketstack.com/v1/eod", 
-                  "?access_key=d4f48f4fa8307e7e0163fc92cce500d2", 
-                  "&symbols=", symbol,
-                  "&date_from=", date_from,
-                  "&date_to=", date_to)
-  } else if (type == "splits") {
-    url <- paste0("http://api.marketstack.com/v1/splits", 
                   "?access_key=d4f48f4fa8307e7e0163fc92cce500d2", 
                   "&symbols=", symbol,
                   "&date_from=", date_from,
@@ -52,10 +46,25 @@ function(input, output, session) {
     req(input$get_data)
     MarketAPI(input$symbol, input$type, input$date_from, input$date_to)
   })  
-  # Create data table pulled market data 
+  
+  # Update the data table
+  #observeEvent(input$get_data, 
   output$data_table <- renderDataTable({
-    market_data()
-  })
+    datatable(
+      market_data(),
+      extensions = c('Buttons', 'ColReorder'),
+      options = list(
+        dom = 'Bfrtip',
+        buttons = c('colvis'),
+        colReorder = TRUE,
+        pageLength = 10,
+        lengthMenu = c(10, 25, 50, 100)
+      ),
+      filter = 'top',
+      selection = 'multiple'
+    )  
+    })
+#)
   
   # Allow for data to be downloaded as .csv
   output$download_data <- downloadHandler(
@@ -68,55 +77,62 @@ function(input, output, session) {
   )
   
   # Generate plots based on user inputs
-  output$plot <- renderPlot({
-    data <- market_data()
-    req(input$x_var, input$y_var)
-
-    # Create grouped data for contingency table
-    df <- data %>%
-      mutate(group_var = cut(input$x_var, breaks = seq(160, max(open, na.rm = TRUE) + 10, by = 10), right = FALSE))
-
-    # Plot 1 : x_var price over time
-    p1 <- ggplot(df, aes(x = as.Date(date), y = input$x_var, group = 1)) +
-            geom_line(color = "red") +
-            labs(title = paste0(input$x_var, "Prices Over Time"), x = "Date", y = paste0(input$x_var, "Price"))
-
-    # Plot 2 : y_var prices over time
-    p2 <- ggplot(df, aes(x = as.Date(date), y = input$y_var, group = 1)) +
-            geom_line(color = "red") +
-            labs(title = paste0(input$y_var, "Prices Over Time"), x = "Date", y = paste0(input$x_var, "Price"))
-
-    # Plot 3: Scatter plot of x_var vs y_var prices
-    p3 <- ggplot(df, aes(x = input$x_var, y = input$y_var)) +
-            geom_point(color = "blue") +
-            labs(title = paste0(input$x_var, "vs", input$y_var, "Prices"), x = paste0(input$x_var, "Price"),
-                 y = paste0(input$y_var, "Price"))
-
-    # Plot 4: Density plot of x_var prices over group_var
-    p4 <- ggplot(df, aes(x = input$x_var, fill = group_var)) +
-            geom_density(alpha = 0.5) +
-            labs(title = paste0("Density Plot of", input$x_var, "Prices by", input$y_var, "Group"),
-                 x = paste0(input$x_var, "Price"), y = "Density", fill = "Open Group")
-    grid.arrange(p1, p2, p3, p4, ncol = 2)
-  })
-
-
+  #observeEvent(input$plot_data, 
+  output$market_plot <- renderPlot({
+      data <- market_data()
+      
+      if (input$plot_type == "Line") {
+        p <- ggplot(data, aes(x = as.Date(date), y = !!sym(input$x_var))) +
+          geom_line(color = "red") +
+          labs(title = paste0(input$x_var, "Prices Over Time", sep = " "), x = "Date", 
+               y = paste0(input$x_var, "Price", sep = " "))
+      } else if (input$plot_type == "Scatter") {
+        p <- ggplot(data, aes(x = !!sym(input$x_var), y = !!sym(input$y_var))) +
+          geom_point(color = "blue") +
+          labs(title = paste0(input$x_var, "vs", input$y_var, "Prices", sep = " "), 
+               x = paste0(input$x_var, "Price", sep = " "), y = paste0(input$y_var, "Price", sep = " "))
+      } else if (input$plot_type == "Box") {
+        p <- ggplot(data, aes(y = !!sym(input$x_var))) + 
+          geom_boxplot()
+      } else if (input$plot_type == "Density") {
+        p <- ggplot(data, aes(x = !!sym(input$x_var), fill = group_var)) +
+          geom_density(alpha = 0.5) +
+          labs(title = paste0("Density Plot of", input$x_var, "Prices by", input$y_var, "Group", sep = " "),
+               x = paste0(input$x_var, "Price", sep = " "), y = "Density", fill = "Open Group")
+      }
+      
+      if (input$facet) {
+        p <- p + facet_wrap(~date)
+      }
+      
+      p
+})
+#)
+  
   #Contingency table for grouped open prices
-  output$contingency_table <- renderTable({
+  output$contingency_table <- renderDataTable({
+    data <- market_data() 
     data <- data %>%
-      mutate(group_var = cut(data[[input$x_var]], breaks = seq(160, max(data$open, na.rm = TRUE) + 10, by = 10), 
+      mutate(group_var = cut(data[[input$x_var]], breaks = seq(160, max(data$open, na.rm = TRUE) + 10, by = 10),
                              right = FALSE))
     contingency_table <- table(data$group_var)
     contingency_table
   })
 
   # Numerical Summaries of open and close prices
-  output$numerical_summaries <- renderTable({
-  data <- data %>%
-    mutate(group_var = cut(data[[input$x_var]], breaks = seq(160, max(data$open, na.rm = TRUE) + 10, by = 10), 
-                           right = FALSE))
+  output$numerical_summaries <- renderDataTable({
+    data <- market_data() 
     numerical_summaries <- data %>%
-      summarise(across(c(input$x_var, input$y_var), list(mean = mean, sd = sd), na.rm = TRUE))
+      summarise(across(c(!!sym(input$x_var), !!sym(input$y_var)), list(mean = mean, sd = sd), na.rm = TRUE))
     numerical_summaries
   })
+  
+  output$summary_table <- renderTable({
+    req(input$x_var)
+    summary_table <- summary(market_data()[[input$x_var]])
+    data.frame(
+      Statistic = names(summary_table),
+      Value = as.character(summary_table)
+    )
+  }, rownames = FALSE)
 }
