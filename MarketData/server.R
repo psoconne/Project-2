@@ -48,7 +48,6 @@ function(input, output, session) {
   })  
   
   # Update the data table
-  #observeEvent(input$get_data, 
   output$data_table <- renderDataTable({
     datatable(
       market_data(),
@@ -64,7 +63,7 @@ function(input, output, session) {
       selection = 'multiple'
     )  
     })
-#)
+
   
   # Allow for data to be downloaded as .csv
   output$download_data <- downloadHandler(
@@ -109,24 +108,22 @@ function(input, output, session) {
 })
 #)
   
-  #Contingency table for grouped open prices
-  output$contingency_table <- renderDataTable({
-    data <- market_data() 
+  # Create a new categorical variable based on selected variable
+  categorized_data <- reactive({
+    data <- market_data()
     data <- data %>%
-      mutate(group_var = cut(data[[input$x_var]], breaks = seq(160, max(data$open, na.rm = TRUE) + 10, by = 10),
-                             right = FALSE))
-    contingency_table <- table(data$group_var)
-    contingency_table
-  })
-
-  # Numerical Summaries of open and close prices
-  output$numerical_summaries <- renderDataTable({
-    data <- market_data() 
-    numerical_summaries <- data %>%
-      summarise(across(c(!!sym(input$x_var), !!sym(input$y_var)), list(mean = mean, sd = sd), na.rm = TRUE))
-    numerical_summaries
+      mutate(open_category = cut(data[[input$x_var]], breaks = seq(160, max(data$open, na.rm = TRUE) + 10, by = 10),
+                                 right = FALSE))
+    return(data)
   })
   
+  # Generate a contingency table
+  output$contingency_table <- renderTable({
+    data <- categorized_data()
+    table(data$open_category) # Adjust 'data$symbol' as necessary for another variable
+  })
+  
+  # Numerical Summaries of selected variable
   output$summary_table <- renderTable({
     req(input$x_var)
     summary_table <- summary(market_data()[[input$x_var]])

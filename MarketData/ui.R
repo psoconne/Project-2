@@ -55,7 +55,7 @@ shinyUI(fluidPage(
                ),
                column(8,
                       tableOutput("summary_table"),
-                      #tableOutput("contingency_table"),
+                      tableOutput("contingency_table"),
                       plotOutput("market_plot")
                )
              )
