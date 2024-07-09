@@ -75,39 +75,6 @@ function(input, output, session) {
     }
   )
   
-  # Generate plots based on user inputs
-  #observeEvent(input$plot_data, 
-  output$market_plot <- renderPlot({
-      data <- market_data()
-      
-      if (input$plot_type == "Line") {
-        p <- ggplot(data, aes(x = as.Date(date), y = !!sym(input$x_var))) +
-          geom_line(color = "red") +
-          labs(title = paste0(input$x_var, "Prices Over Time", sep = " "), x = "Date", 
-               y = paste0(input$x_var, "Price", sep = " "))
-      } else if (input$plot_type == "Scatter") {
-        p <- ggplot(data, aes(x = !!sym(input$x_var), y = !!sym(input$y_var))) +
-          geom_point(color = "blue") +
-          labs(title = paste0(input$x_var, "vs", input$y_var, "Prices", sep = " "), 
-               x = paste0(input$x_var, "Price", sep = " "), y = paste0(input$y_var, "Price", sep = " "))
-      } else if (input$plot_type == "Box") {
-        p <- ggplot(data, aes(y = !!sym(input$x_var))) + 
-          geom_boxplot()
-      } else if (input$plot_type == "Density") {
-        p <- ggplot(data, aes(x = !!sym(input$x_var), fill = group_var)) +
-          geom_density(alpha = 0.5) +
-          labs(title = paste0("Density Plot of", input$x_var, "Prices by", input$y_var, "Group", sep = " "),
-               x = paste0(input$x_var, "Price", sep = " "), y = "Density", fill = "Open Group")
-      }
-      
-      if (input$facet) {
-        p <- p + facet_wrap(~date)
-      }
-      
-      p
-})
-#)
-  
   # Create a new categorical variable based on selected variable
   categorized_data <- reactive({
     data <- market_data()
@@ -117,10 +84,43 @@ function(input, output, session) {
     return(data)
   })
   
+  # Generate plots based on user inputs
+  #observeEvent(input$plot_data, 
+  output$market_plot <- renderPlot({
+      data <- categorized_data()
+      
+      if (input$plot_type == "Line") {
+        p <- ggplot(data, aes(x = as.Date(date), y = !!sym(input$x_var))) +
+          geom_line(color = "red") +
+          labs(title = paste(input$x_var, "Prices Over Time", sep = " "), x = "Date", 
+               y = paste(input$x_var, "Price", sep = " "))
+      } else if (input$plot_type == "Scatter") {
+        p <- ggplot(data, aes(x = !!sym(input$x_var), y = !!sym(input$y_var))) +
+          geom_point(color = "blue") +
+          labs(title = paste(input$x_var, "vs", input$y_var, "Prices", sep = " "), 
+               x = paste(input$x_var, "Price", sep = " "), y = paste(input$y_var, "Price", sep = " "))
+      } else if (input$plot_type == "Box") {
+        p <- ggplot(data, aes(y = !!sym(input$x_var))) + 
+          geom_boxplot()
+      } else if (input$plot_type == "Density") {
+        p <- ggplot(data, aes(x = !!sym(input$x_var), fill = open_category)) +
+          geom_density(alpha = 0.5) +
+          labs(title = paste("Density Plot of", input$x_var, "Prices by Open Price Group", sep = " "),
+               x = paste(input$x_var, "Price", sep = " "), y = "Density", fill = "Open Group")
+      }
+      
+      if (input$facet) {
+        p <- p + facet_wrap(~open_category)
+      }
+      
+      p
+})
+#)
+  
   # Generate a contingency table
   output$contingency_table <- renderTable({
     data <- categorized_data()
-    table(data$open_category) # Adjust 'data$symbol' as necessary for another variable
+    table(data$open_category) 
   })
   
   # Numerical Summaries of selected variable

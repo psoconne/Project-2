@@ -15,9 +15,9 @@ shinyUI(fluidPage(
                a("Marketstack", href = "https://marketstack.com/", target = "_blank"), "."),
              p("Tabs:"),
              tags$ul(
-               tags$li("About: Information about the app."),
-               tags$li("Data Download: Download market data from Marketstack."),
-               tags$li("Data Exploration: Summaries and graphs market data.")
+               tags$li("About: Provides information about the app."),
+               tags$li("Data Download: Allows user to specify what data they want to use from Marketstack and also provides the option of downloading it in the form of a .csv file."),
+               tags$li("Data Exploration: Allows the user to create numerical summaries and graphs based on their market data (the tables are based off of the X variable selected).")
              ),
              tags$img(src = "https://images.g2crowd.com/uploads/product/image/social_landscape/social_landscape_8532463e95e5d1a9a7f09665c11807d5/marketstack-api.png", height = "100px")
     ),    
@@ -48,7 +48,7 @@ shinyUI(fluidPage(
                                     choices = c("open", "close", "high", "low")),
                         selectInput("plot_type", "Plot Type", 
                                     choices = c("Line", "Scatter", "Box", "Density")),
-                        checkboxInput("facet", "Facet by Date", value = FALSE),
+                        checkboxInput("facet", "Facet by Open Price Group", value = FALSE),
                         actionButton("plot_data", "Plot Data")
                         )
                       )
